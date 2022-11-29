@@ -8,13 +8,22 @@ cabecalhoMoedas: .asciiz "MOEDAS:\n"
 saidaNota: .asciiz " notas(s) de R$ "
 saidaMoeda: .asciiz " moeda(s) de R$ "
 
-notas: .word 100, 50, 20, 10, 5, 2
+printTeste: .asciiz "TESTE"
+
+linhaEmBranco: .asciiz "\n"
+
+notas: .float 100, 50, 20, 10, 5, 2
 moedas: .float 1.0, 0.5, 0.25, 0.1, 0.05, 0.01
 qtd: .word 6
 
 .text
 
 main:	
+	# Vetores
+	l.s $f0, notas
+	lw $s1, qtd
+	l.s $f1, moedas
+	
 	# Obter o valor
 	li $v0, 4
 	la $a0, entrada
@@ -27,23 +36,35 @@ main:
 	la $a0, cabecalhoNotas
 	syscall
 
-	la $s0, notas
-	lw $s1, qtd
-	addi $t0, $zero, 0
+	addi $t0, $zero, 0 # i
+	la $t1, 0($f0) # vetor
 	forNotas:
 		beq $t0, $s1, exitForNotas
-		# Saber qual valor estamos
-		sll $t1, $t0, 2 # t1 = t0 * 4
-		add $s0, $s0, $t1
-
-		move $t2, 0($s0)
-		# Imprimir a nota
+		# Imprimir a nota		
 		li $v0, 1
-		move $a0, $t2
+		lw $a0, 0($t1)
+		syscall
+		li $v0, 4
+		la $a0, linhaEmBranco
 		syscall
 		
+		# Passar o valor para a funcao e imprimir a quantidade
+		mfc1 $a0, $f0
+		mfc1 $a1, $t1
+		jal calcula_nota
+		
+		li $v0, 4
+		la $a0, printTeste
+		syscall
+		
+		move $a0, $v0
+		lw $a1, 0($t1)
+		jal print_nota
+
 		# Somar o i
 		addi $t0, $t0, 1
+		addi $t1, $t1, 4
+		j forNotas
 		
 	exitForNotas:
 	
@@ -58,7 +79,8 @@ calcula_nota:
 	addi $v0, $zero, 0
 	whileNota:
 		blt $a0, $a1, exitNota
-		sub $a0, $a0, $a1
+				
+		sub.s $a0, $a0, $a1
 		addi $v0, $v0, 1
 		j whileNota
 	exitNota:
